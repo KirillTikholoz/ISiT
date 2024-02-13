@@ -1,0 +1,30 @@
+name: Lint Code
+
+on:
+  pull_request:
+    paths:
+      - '**/*.py'
+
+jobs:
+  lint:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        poetry install
+
+    - name: Check Code Style
+      run: black --check .
+
+    - name: Check if changes are needed
+      run: |
+        git diff --exit-code || (echo "Code style issues found. Run 'black .' locally to fix them." && exit 1)
