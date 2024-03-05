@@ -4,7 +4,13 @@ import os.path
 import httpx
 from bs4 import BeautifulSoup
 import asyncio
-from .connect import extract_url, insert_url, insert_image, db_pool_connection, create_model
+from .connect import (
+    extract_url,
+    insert_url,
+    insert_image,
+    db_pool_connection,
+    create_model,
+)
 import aiofiles
 import logging
 

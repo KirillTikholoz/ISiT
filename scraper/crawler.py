@@ -63,4 +63,3 @@ async def crawl_product_links(sitemap_index_url):
         logging.info("Crawler закончил работу")
     except Exception as e:
         logging.info("Ошибка при работе crawler'а:")
-

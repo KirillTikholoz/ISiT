@@ -26,16 +26,12 @@ async def db_pool_connection():
 
 async def count_images():
     connection = await db_connection()
-    return await connection.fetchval(
-        "SELECT count(*) FROM images"
-    )
+    return await connection.fetchval("SELECT count(*) FROM images")
 
 
 async def count_visited_urls():
     connection = await db_connection()
-    return await connection.fetchval(
-        "SELECT count(*) FROM visited_urls"
-    )
+    return await connection.fetchval("SELECT count(*) FROM visited_urls")
 
 
 async def create_visited_urls(connection):
