@@ -10,5 +10,4 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 COPY scraper /app/scraper
 
-# CMD ["python", "scraper/main.py"]
 CMD ["uvicorn", "scraper.api:app", "--host", "0.0.0.0", "--port", "8000"]
