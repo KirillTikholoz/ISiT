@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y libgl1-mesa-glx
 
 RUN pip install --upgrade pip
 ADD requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --no-cache -r requirements.txt
 
 COPY app /cv/app
 COPY dataRepository /cv/dataRepository
