@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from .crawler import crawl_product_links
-from scraper.scraper import scrap
+from .scraper import scrap
 from .connect import count_images, count_visited_urls, extract_all_images, db_connection
 import logging
 
