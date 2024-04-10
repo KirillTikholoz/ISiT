@@ -1,103 +1,74 @@
-# -*- coding: utf-8 -*-
 import cv2
 import numpy as np
+from .model import Image, init_db
 
-# Здесь размер изображения должен быть n раз в 2 раза 2 раза
-A = cv2.imread(r"C:\Users\admin\PycharmProjects\computer_vision\images_without_duplicates\2eagnm3nj5100rxpl-army-0_496x496.jpg")
-A = cv2.resize(A, (512, 512), interpolation=cv2.INTER_CUBIC)
-B = cv2.imread(r"C:\Users\admin\PycharmProjects\computer_vision\images_without_duplicates\2eagnm3nj5100rxpl-chax-0_496x496.jpg")
-B = cv2.resize(B, (512, 512), interpolation=cv2.INTER_CUBIC)
 
-# Дайте GPA Gauss Pyramid с 8 -м этажем
-G = A.copy()
-gpA = [G]
-for i in range(7):
-    #   7 раз гауссовая смутная+выборка
-    G = cv2.pyrDown(G)
-    # Дайте результаты каждого раз, когда гауссовые смутные+образцы в GPA
-    gpA.append(G)
+def merge_images(image_name1, image_name2):
+    session = init_db()
+    image_record1 = session.query(Image).filter_by(name=image_name1).first()
+    image_record2 = session.query(Image).filter_by(name=image_name2).first()
 
-# GAUSS Pyramid GPB
-G = B.copy()
-gpB = [G]
-for i in range(7):
-    #   7 раз гауссовая смутная+выборка
-    G = cv2.pyrDown(G)
-    # Дайте результаты гауссовских смутных+образцов в GPB
-    gpB.append(G)
+    image_data1 = image_record1.data
+    image_data2 = image_record2.data
 
-# Объединить две пирамиды Гаусса
-LR = []
-# Zip (LPA, LPB) объединяет два изображения двух слоев пирамиды Gauss в группе, а затем каждая группа образует большую молнию
-# Для двух изображений в каждой группе элементов
-for la, lb in zip(gpA, gpB):
-    #
-    rows, cols, dpt = la.shape
-    # Используйте np.hstack, чтобы сшить эти два изображения «Половина и половина»
-    # Возьмите половину левого и половину справа от LB в картину слияния, и результат дается LS
-    lr = np.hstack((la[:, 0:cols // 2], lb[:, cols // 2:]))
-    # Две пирамиды Лапласа назначены LS
-    LR.append(lr)
+    image_array1 = np.frombuffer(image_data1, dtype=np.uint8)
+    image_array2 = np.frombuffer(image_data2, dtype=np.uint8)
 
-# Используйте пирамиду Fusion Laplas, чтобы примирить конечное изображение
-# Инициализированный LS является самым высоким уровнем пирамиды Лапласа после слияния
-# После окончания цикла ниже, LS является конечным результатом, необходимым
-lr = LR[7]
-for i in range(6, -1, -1):
-    # Сначала отображается каждый изображение слоя, а затем добавляется к следующему слою текущего слоя, и результат дается LS
-    lr = cv2.pyrUp(lr)
-    lr = cv2.add(lr, LR[i])
-# ---------------------------------------------------------------------------------------------------
-# Генерировать 8 слоев пирамиды Лапласа
-# Начните с верхнего слоя, чтобы построить
-# Верхний слой - верхний уровень пирамиды Гаусса
-lpA = [gpA[7]]
-# 7 6 5 4 3 2 1
-for i in range(7, 0, -1):
-    # С верхнего слоя, постоянно отбор проб
-    GE = cv2.pyrUp(gpA[i])
-    # Используйте следующий слой Гаусса, чтобы свести к минимуму верхнюю выборку Гауссии
-    L = cv2.subtract(gpA[i - 1], GE)
-    # В результате отдайте его пирамиде Лапласа
-    lpA.append(L)
+    A = cv2.imdecode(image_array1, cv2.IMREAD_COLOR)
+    B = cv2.imdecode(image_array2, cv2.IMREAD_COLOR)
 
-lpB = [gpB[7]]
-for i in range(7, 0, -1):
-    GE = cv2.pyrUp(gpB[i])
-    L = cv2.subtract(gpB[i - 1], GE)
-    lpB.append(L)
+    A = cv2.resize(A, (512, 512), interpolation=cv2.INTER_CUBIC)
+    B = cv2.resize(B, (512, 512), interpolation=cv2.INTER_CUBIC)
 
-# Объединить две пирамиды Лапласа
-LS = []
-# Zip (LPA, LPB) Сочетайте два изображения каждого слоя двух пирамид Лапласа в кортеж, а затем каждая судьба образует большую молнию
-# Для двух изображений в каждой группе элементов
-for la, lb in zip(lpA, lpB):
-    #
-    rows, cols, dpt = la.shape
-    # Используйте np.hstack, чтобы сшить эти два изображения «Половина и половина»
-    # Возьмите половину левого и половину справа от LB в картину слияния, и результат дается LS
-    ls = np.hstack((la[:, 0:cols // 2], lb[:, cols // 2:]))
-    # Две пирамиды Лапласа назначены LS
-    LS.append(ls)
+    G = A.copy()
+    gpA = [G]
+    for i in range(7):
+        G = cv2.pyrDown(G)
+        gpA.append(G)
 
-# Используйте пирамиду Fusion Laplas, чтобы примирить конечное изображение
-# Инициализированный LS является самым высоким уровнем пирамиды Лапласа после слияния
-# После окончания цикла ниже, LS является конечным результатом, необходимым
-ls = LS[0]
-for i in range(1, 8):
-    # Сначала отображается каждый изображение слоя, а затем добавляется к следующему слою текущего слоя, и результат дается LS
-    ls = cv2.pyrUp(ls)
-    ls = cv2.add(ls, LS[i])
+    G = B.copy()
+    gpB = [G]
+    for i in range(7):
+        G = cv2.pyrDown(G)
+        gpB.append(G)
 
-with_pyramid = lr + ls
+    LR = []
+    for la, lb in zip(gpA, gpB):
+        rows, cols, dpt = la.shape
+        lr = np.hstack((la[:, 0 : cols // 2], lb[:, cols // 2 :]))
+        LR.append(lr)
 
-# Не используйте слияние Pyramid, напрямую подключите два оригинальных изображения
-without_pyramid = np.hstack((A[:, :cols // 2], B[:, cols // 2:]))
+    lr = LR[7]
+    for i in range(6, -1, -1):
+        lr = cv2.pyrUp(lr)
+        lr = cv2.add(lr, LR[i])
 
-# Результаты сравнения
-cv2.imshow("with_pyramid", with_pyramid)
-# cv2.imshow("without_pyramid", without_pyramid)
+    lpA = [gpA[7]]
 
-# Нажмите кнопку, чтобы закрыть все окно
-cv2.waitKey()
-cv2.destroyAllWindows()
+    for i in range(7, 0, -1):
+        GE = cv2.pyrUp(gpA[i])
+        L = cv2.subtract(gpA[i - 1], GE)
+        lpA.append(L)
+
+    lpB = [gpB[7]]
+    for i in range(7, 0, -1):
+        GE = cv2.pyrUp(gpB[i])
+        L = cv2.subtract(gpB[i - 1], GE)
+        lpB.append(L)
+
+    LS = []
+    for la, lb in zip(lpA, lpB):
+        rows, cols, dpt = la.shape
+        ls = np.hstack((la[:, 0 : cols // 2], lb[:, cols // 2 :]))
+        LS.append(ls)
+
+    ls = LS[0]
+    for i in range(1, 8):
+        ls = cv2.pyrUp(ls)
+        ls = cv2.add(ls, LS[i])
+
+    with_pyramid = lr + ls
+
+    _, image_encoded = cv2.imencode(".jpg", with_pyramid)
+    result_data = image_encoded.tobytes()
+    return result_data

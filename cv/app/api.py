@@ -12,6 +12,7 @@ from .searcher import image_search
 from .searcher_text import searcher_image_text, create_embeddings
 from .prediction import predict
 from .utils_cv import extract_all_image_name
+from .image_merge_pyramid import merge_images
 import io
 
 app = FastAPI()
@@ -38,6 +39,17 @@ async def find_obj(image_filename):
 async def delete_dup():
     delete_duplicates()
     return {"message": "Дубликаты удалены"}
+
+
+@app.get("/merge")
+async def merge(image_filename1, image_filename2):
+    # ?image_filename1=0c3e7aaea822bbd968eebf9397cd1105ef4e42ce_512e0631f69ea3bd3e64fd4a46e03c2c4c1a056e.jpg
+    # &image_filename2=01d8dd24eda298c330d55f93dcbdaa4dbc27c9de_f2ed0ce905ba714b9b153b854bffb2acda238446.jpg
+    image_data = merge_images(image_filename1, image_filename2)
+
+    image_base64 = base64.b64encode(image_data).decode("utf-8")
+    html_image = f'<img src="data:image/jpeg;base64,{image_base64}" alt="Image">'
+    return Response(content=html_image, media_type="text/html")
 
 
 @app.get("/hsv")
